@@ -2,17 +2,16 @@
 
 ARG FLAVOR=${TARGETARCH}
 
-ARG ROCMVERSION=6.1.2
+ARG ROCMVERSION=6.3.2
 ARG JETPACK5VERSION=r35.4.1
 ARG JETPACK6VERSION=r36.2.0
 ARG CMAKEVERSION=3.31.2
 
-FROM --platform=linux/amd64 rocm/dev-centos-7:${ROCMVERSION}-complete AS base-amd64
+FROM --platform=linux/amd64 rocm/dev-almalinux-8:${ROCMVERSION}-complete AS base-amd64
 RUN sed -i -e 's/mirror.centos.org/vault.centos.org/g' -e 's/^#.*baseurl=http/baseurl=http/g' -e 's/^mirrorlist=http/#mirrorlist=http/g' /etc/yum.repos.d/*.repo \
-    && yum install -y yum-utils devtoolset-10-gcc devtoolset-10-gcc-c++ \
-    && yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo \
-    && curl -s -L https://github.com/ccache/ccache/releases/download/v4.10.2/ccache-4.10.2-linux-x86_64.tar.xz | tar -Jx -C /usr/local/bin --strip-components 1
-ENV PATH=/opt/rh/devtoolset-10/root/usr/bin:/opt/rh/devtoolset-11/root/usr/bin:$PATH
+    && dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo \
+    && dnf install gcc-toolset-11-gcc gcc-toolset-11-gcc-c++ gcc-toolset-10-gcc gcc-toolset-10-gcc-c++ -y
+ENV PATH=/opt/rh/gcc-toolset-10/root/usr/bin:/opt/rh/gcc-toolset-11/root/usr/bin:$PATH
 
 FROM --platform=linux/arm64 rockylinux:8 AS base-arm64
 # install epel-release for ccache
@@ -30,8 +29,8 @@ ENV LDFLAGS=-s
 
 FROM base AS cpu
 # amd64 uses gcc which requires devtoolset-11 for AVX extensions while arm64 uses clang
-RUN if [ "$(uname -m)" = "x86_64" ]; then yum install -y devtoolset-11-gcc devtoolset-11-gcc-c++; fi
-ENV PATH=/opt/rh/devtoolset-11/root/usr/bin:$PATH
+RUN if [ "$(uname -m)" = "x86_64" ]; then dnf install -y gcc-toolset-11-gcc gcc-toolset-11-gcc-c++ ; fi
+ENV PATH=/opt/rh/gcc-toolset-11/root/usr/bin:$PATH
 RUN --mount=type=cache,target=/root/.ccache \
     cmake --preset 'CPU' \
         && cmake --build --parallel --preset 'CPU' \
@@ -111,7 +110,7 @@ FROM ${FLAVOR} AS archive
 COPY --from=cpu dist/lib/ollama /lib/ollama
 COPY --from=build /bin/ollama /bin/ollama
 
-FROM ubuntu:20.04
+FROM ubuntu:24.10
 RUN apt-get update \
     && apt-get install -y ca-certificates \
     && apt-get clean \
