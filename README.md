@@ -1,3 +1,8 @@
+Notes:
+This branch is a "not really a fork", includes patches to the dokcer build process and enable local main memory to the APU GPU on AMD CPUs.
+Tested on AMD Ryzen 5000 and 7000 series APU. Needs >=6.10 Linux kernel. 
+Intended for use in container enviroments such as podman and docker.
+
 <div align="center">
   <a href="https://ollama.com" />
     <img alt="ollama" height="200px" src="https://github.com/ollama/ollama/assets/3325447/0d0b44e2-8f4a-4e99-9b52-a5c1c741c8f7">
