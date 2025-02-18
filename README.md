@@ -22,7 +22,7 @@ podman run -it --rm --privileged -v ./:/tmp/work:z --entrypoint buildctl-daemonl
 And load this container image with podman.
 
 ## Container image
-You can test my prebuild container image on ghcr.io/rjmalagon/ollama-linux-amd-apu:latest
+You can test my container image on ghcr.io/rjmalagon/ollama-linux-amd-apu:latest
 Example on how to run this image on Podman with an Ryzen 7000 Series APU, with flash attention and quantized KV cache.
 ```shell
 podman run --name ollama  -v /local/data/path/:/root/.ollama:Z -e OLLAMA_FLASH_ATTENTION=true -e HSA_OVERRIDE_GFX_VERSION="10.3.0" -e OLLAMA_KV_CACHE_TYPE="q8_0" --device /dev/kfd --device /dev/dri -e OLLAMA_DEBUG=0 ghcr.io/rjmalagon/ollama-linux-amd-apu:latest serve
