@@ -29,7 +29,6 @@ podman run --name ollama  -v /local/data/path/:/root/.ollama:Z -e OLLAMA_FLASH_A
 ```
 
 ## How to run this build on Docker and Podman.
-Follow the official Ollama instructions for ROCM builds, you will need to expose the correct devices ` --device /dev/kfd --device /dev/dri `, additionally you will need an env variable for every APU arch, for example `-e HSA_OVERRIDE_GFX_VERSION="10.3.0"` for Ryzen 6000 series APU, or `-e HSA_OVERRIDE_GFX_VERSION="9.0.0"` Ryzen 5000 series APU.
 The override will need adjustments for other AMD APUs.
 
 ### Check amount of GTT memory
