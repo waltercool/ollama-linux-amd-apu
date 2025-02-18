@@ -21,6 +21,13 @@ podman run -it --rm --privileged -v ./:/tmp/work:z --entrypoint buildctl-daemonl
 ```
 And load this container image with podman.
 
+## Container image
+You can test my prebuild container image on ghcr.io/rjmalagon/ollama-linux-amd-apu:latest
+Example on how to run this image on Podman with an Ryzen 7000 Series APU, with flash attention and quantized KV cache.
+```shell
+podman run --name ollama  -v /local/data/path/:/root/.ollama:Z -e OLLAMA_FLASH_ATTENTION=true -e HSA_OVERRIDE_GFX_VERSION="10.3.0" -e OLLAMA_KV_CACHE_TYPE="q8_0" --device /dev/kfd --device /dev/dri -e OLLAMA_DEBUG=0 ghcr.io/rjmalagon/ollama-linux-amd-apu:latest serve
+```
+
 ## How to run this build on Docker and Podman.
 Follow the official Ollama instructions for ROCM builds, you will need to expose the correct devices ` --device /dev/kfd --device /dev/dri `, additionally you will need an env variable for every APU arch, for example `-e HSA_OVERRIDE_GFX_VERSION="10.3.0"` for Ryzen 6000 series APU, or `-e HSA_OVERRIDE_GFX_VERSION="9.0.0"` Ryzen 5000 series APU.
 The override will need adjustments for other AMD APUs.
