@@ -1,29 +1,51 @@
 # Notes:
-This branch is a "not really a fork", includes patches to the Docker build process and enable local main memory to the APU GPU on AMD CPUs.
+This branch is a "not really a fork", includes patches to the Docker build process and enable local main memory, asignable GTT , to the APU GPU on AMD CPUs.
 Tested on AMD Ryzen 5000 and 7000 series APU. Needs >=6.10 Linux kernel.
 Intended for use in container environments such as Podman and Docker.
 
-# Disclaimer:
+## Disclaimer:
 This is my duct-taped patch work, someone that barely reads GO, this works for me but maybe will no work for you.
 You can read more about the original author of the patches on https://github.com/Maciej-Mogilany/ollama/tree/AMD_APU_GTT_memory
 
-# How to build on Docker:
+## How to build on Docker:
 Just like:
 ```shell
 docker build --build-arg FLAVOR=rocm .
 ```
 Requires buildkit enabled docker.
 
-# How to build on Podman:
+## How to build on Podman:
 Buildah on podman just doesn't cut it, you can use "daemon-less" buildkit for this:
 ```shell
 podman run -it --rm --privileged -v ./:/tmp/work:z --entrypoint buildctl-daemonless.sh moby/buildkit:master build --frontend dockerfile.v0 --local context=/tmp/work --local dockerfile=/tmp/work --opt build-arg:FLAVOR=rocm --output type=oci,dest=/tmp/work/ollama-rocm.tar
 ```
 And load this container image with podman.
 
-# How to run this build on Docker and Podman.
+## How to run this build on Docker and Podman.
 Follow the official Ollama instructions for ROCM builds, you will need to expose the correct devices ` --device /dev/kfd --device /dev/dri `, additionally you will need an env variable for every APU arch, for example `-e HSA_OVERRIDE_GFX_VERSION="10.3.0"` for Ryzen 6000 series APU, or `-e HSA_OVERRIDE_GFX_VERSION="9.0.0"` Ryzen 5000 series APU.
 The override will need adjustments for other AMD APUs.
+
+### Check amount of GTT memory
+ You can check the amount of shared memory (GTT memory) by using this command
+ ```shell
+ $ sudo dmesg | grep "amdgpu.*memory"
+ [    3.861444] [drm] amdgpu: 512M of VRAM memory ready
+ [    3.861448] [drm] amdgpu: 12288M of GTT memory ready.
+ ```
+
+The default value is half of system memory.
+### Modify the amount of GTT memory
+
+ If you want to modify the amount of GTT memory. You can edit the `/etc/modprobe.d/ttm.conf` file and add the following content:
+
+ ```
+ # nb of pages 4k, for 48Go
+ options ttm pages_limit=12582912
+ options ttm page_pool_size=12582912
+ ```
+
+## Mentions
+Kudos to @MaciejMogilany for the original patches and to @winstonma for the valuable GTT memory adjutment info.
 
 <div align="center">
   <a href="https://ollama.com" />
