@@ -160,6 +160,10 @@ jobs:
           echo "$hipPath\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "CC=$hipPath\bin\clang.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "CXX=$hipPath\bin\clang++.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - if: matrix.preset == 'CPU'
+        run: |
+          echo "CC=clang.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "CXX=clang++.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
       - if: ${{ !cancelled() && steps.cache-install.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v4
         with:
@@ -329,7 +333,9 @@ jobs:
           done
         working-directory: dist/${{ matrix.os }}-${{ matrix.arch }}
       - run: |
-          for ARCHIVE in dist/${{ matrix.os }}-${{ matrix.arch }}/*.tar.in; do tar c -C dist/${{ matrix.os }}-${{ matrix.arch }} -T $ARCHIVE | pigz -9vc >$(basename ${ARCHIVE//.*/}.tgz); done
+          for ARCHIVE in dist/${{ matrix.os }}-${{ matrix.arch }}/*.tar.in; do
+            tar c -C dist/${{ matrix.os }}-${{ matrix.arch }} -T $ARCHIVE --owner 0 --group 0 | pigz -9vc >$(basename ${ARCHIVE//.*/}.tgz);
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.target }}
