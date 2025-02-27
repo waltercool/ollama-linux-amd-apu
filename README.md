@@ -1,7 +1,7 @@
 # Notes:
-This branch is a "not really a fork", includes patches to the Docker build process and enable local main memory, asignable GTT , to the APU GPU on AMD CPUs.
+This branch is a "not really a fork", includes patches to  enable local main memory, asignable GTT , to the APU GPU on AMD CPUs.
 Tested on AMD Ryzen 5000 and 7000 series APU. Needs >=6.10 Linux kernel.
-Intended for use in container environments such as Podman and Docker.
+Intended for use in container environments such as Podman and Docker, but can be used to custom builds.
 
 ## Disclaimer:
 This is my duct-taped patch work, someone that barely reads GO, this works for me but maybe will no work for you.
@@ -20,6 +20,9 @@ Buildah on podman just doesn't cut it, you can use "daemon-less" buildkit for th
 podman run -it --rm --privileged -v ./:/tmp/work:z --entrypoint buildctl-daemonless.sh moby/buildkit:master build --frontend dockerfile.v0 --local context=/tmp/work --local dockerfile=/tmp/work --opt build-arg:FLAVOR=rocm --output type=oci,dest=/tmp/work/ollama-rocm.tar
 ```
 And load this container image with podman.
+
+## How to build directly from repo.
+Just follow the official Ollama docs.
 
 ## How to run this build on Docker and Podman.
 Follow the official Ollama instructions for ROCM builds, you will need to expose the correct devices ` --device /dev/kfd --device /dev/dri `, additionally you will need an env variable for every APU arch, for example `-e HSA_OVERRIDE_GFX_VERSION="10.3.0"` for Ryzen 7000 series APU, or `-e HSA_OVERRIDE_GFX_VERSION="9.0.0"` Ryzen 5000 series APU.
