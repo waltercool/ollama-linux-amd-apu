@@ -2,6 +2,7 @@ package ollama
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -84,14 +85,14 @@ func newClient(t *testing.T, h http.HandlerFunc) (*Registry, *blob.DiskCache) {
 		}
 	}
 
-	rc := &Registry{
+	r := &Registry{
 		HTTPClient: &http.Client{
 			Transport: recordRoundTripper(h),
 		},
 	}
 
 	link := func(name string, manifest string) {
-		_, n, _, err := parseName(name, rc.NameMask)
+		n, err := r.parseName(name)
 		if err != nil {
 			panic(err)
 		}
@@ -122,7 +123,7 @@ func newClient(t *testing.T, h http.HandlerFunc) (*Registry, *blob.DiskCache) {
 	commit("sizemismatch", mklayer("exists"), &Layer{Digest: blob.DigestFromBytes("present"), Size: 499})
 	link("invalid", "!!!!!")
 
-	return rc, c
+	return r, c
 }
 
 func okHandler(w http.ResponseWriter, r *http.Request) {
@@ -143,29 +144,6 @@ func importBytes(t *testing.T, c *blob.DiskCache, data string) blob.Digest {
 		t.Fatal(err)
 	}
 	return d
-}
-
-func TestRegistryPushInvalidNames(t *testing.T) {
-	rc, c := newClient(t, nil)
-
-	cases := []struct {
-		name string
-		err  error
-	}{
-		{"", ErrNameInvalid},
-		{"@", ErrNameInvalid},
-		{"@x", blob.ErrInvalidDigest},
-	}
-
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create a new registry and push a new image.
-			err := rc.Push(t.Context(), c, tt.name, nil)
-			if !errors.Is(err, tt.err) {
-				t.Errorf("err = %v; want %v", err, tt.err)
-			}
-		})
-	}
 }
 
 func withTraceUnexpected(ctx context.Context) (context.Context, *Trace) {
@@ -622,7 +600,7 @@ func TestInsecureSkipVerify(t *testing.T) {
 	}))
 	defer s.Close()
 
-	const name = "ollama.com/library/insecure"
+	const name = "library/insecure"
 
 	var rc Registry
 	url := fmt.Sprintf("https://%s/%s", s.Listener.Addr(), name)
@@ -723,4 +701,116 @@ func TestErrorUnmarshal(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestParseNameErrors tests that parseName returns errors messages with enough
+// detail for users to debug naming issues they may encounter. Previous to this
+// test, the error messages were not very helpful and each problem was reported
+// as the same message.
+//
+// It is only for testing error messages, not that all invalids and valids are
+// covered. Those are in other tests for names.Name and blob.Digest.
+func TestParseNameExtendedErrors(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want string
+	}{}
+
+	var r Registry
+	for _, tt := range cases {
+		_, _, _, err := r.parseNameExtended(tt.name)
+		if !errors.Is(err, tt.err) {
+			t.Errorf("[%s]: err = %v; want %v", tt.name, err, tt.err)
+		}
+		if err != nil && !strings.Contains(err.Error(), tt.want) {
+			t.Errorf("[%s]: err =\n\t%v\nwant\n\t%v", tt.name, err, tt.want)
+		}
+	}
+}
+
+func TestParseNameExtended(t *testing.T) {
+	cases := []struct {
+		in     string
+		scheme string
+		name   string
+		digest string
+		err    string
+	}{
+		{in: "http://m", scheme: "http", name: "m"},
+		{in: "https+insecure://m", scheme: "https+insecure", name: "m"},
+		{in: "http+insecure://m", err: "unsupported scheme"},
+
+		{in: "http://m@sha256:1111111111111111111111111111111111111111111111111111111111111111", scheme: "http", name: "m", digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"},
+
+		{in: "", err: "invalid or missing name"},
+		{in: "m", scheme: "https", name: "m"},
+		{in: "://", err: "invalid or missing name"},
+		{in: "@sha256:deadbeef", err: "invalid digest"},
+		{in: "@sha256:deadbeef@sha256:deadbeef", err: "invalid digest"},
+	}
+	for _, tt := range cases {
+		t.Run(tt.in, func(t *testing.T) {
+			var r Registry
+			scheme, n, digest, err := r.parseNameExtended(tt.in)
+			if err != nil {
+				if tt.err == "" {
+					t.Errorf("err = %v; want nil", err)
+				} else if !strings.Contains(err.Error(), tt.err) {
+					t.Errorf("err = %v; want %q", err, tt.err)
+				}
+			} else if tt.err != "" {
+				t.Errorf("err = nil; want %q", tt.err)
+			}
+			if err == nil && !n.IsFullyQualified() {
+				t.Errorf("name = %q; want fully qualified", n)
+			}
+
+			if scheme != tt.scheme {
+				t.Errorf("scheme = %q; want %q", scheme, tt.scheme)
+			}
+
+			// smoke-test name is superset of tt.name
+			if !strings.Contains(n.String(), tt.name) {
+				t.Errorf("name = %q; want %q", n, tt.name)
+			}
+
+			tt.digest = cmp.Or(tt.digest, (&blob.Digest{}).String())
+			if digest.String() != tt.digest {
+				t.Errorf("digest = %q; want %q", digest, tt.digest)
+			}
+		})
+	}
+}
+
+func TestUnlink(t *testing.T) {
+	t.Run("found by name", func(t *testing.T) {
+		rc, c := newClient(t, nil)
+
+		// confirm linked
+		_, err := rc.ResolveLocal(c, "single")
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		// unlink
+		_, err = rc.Unlink(c, "single")
+		testutil.Check(t, err)
+
+		// confirm unlinked
+		_, err = rc.ResolveLocal(c, "single")
+		if !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("err = %v; want fs.ErrNotExist", err)
+		}
+	})
+	t.Run("not found by name", func(t *testing.T) {
+		rc, c := newClient(t, nil)
+		ok, err := rc.Unlink(c, "manifestNotFound")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
+			t.Error("expected not found")
+		}
+	})
 }
