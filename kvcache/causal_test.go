@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ollama/ollama/ml"
+	"github.com/ollama/ollama/model/input"
 )
 
 type testCase struct {
@@ -269,7 +270,7 @@ func testCache(t *testing.T, backend ml.Backend, cache Cache, tests []testCase) 
 			context := backend.NewContext()
 			defer context.Close()
 
-			err := cache.StartForward(context, test.pos, test.seqs)
+			err := cache.StartForward(context, input.Options{Positions: test.pos, Sequences: test.seqs})
 			if err != nil {
 				panic(err)
 			}
@@ -300,6 +301,10 @@ func (b *testBackend) Get(name string) ml.Tensor {
 }
 
 func (b *testBackend) NewContext() ml.Context {
+	return &testContext{}
+}
+
+func (b *testBackend) NewContextSize(int) ml.Context {
 	return &testContext{}
 }
 
@@ -346,11 +351,15 @@ func (c *testContext) FromIntSlice(s []int32, shape ...int) (ml.Tensor, error) {
 	return out, nil
 }
 
+func (c *testContext) Input() ml.Context    { return c }
+func (c *testContext) Output() ml.Context   { return c }
+func (c *testContext) Layer(int) ml.Context { return c }
+
 func (c *testContext) Forward(...ml.Tensor) ml.Context { return c }
 
 func (c *testContext) Compute(...ml.Tensor) {}
 
-func (c *testContext) MaxTensors() int {
+func (c *testContext) MaxGraphNodes() int {
 	return 10
 }
 
@@ -432,11 +441,19 @@ func (t *testTensor) Scale(ctx ml.Context, s float64) ml.Tensor {
 	panic("not implemented")
 }
 
+func (t *testTensor) AvgPool1D(ctx ml.Context, k, s, p int) ml.Tensor {
+	panic("not implemented")
+}
+
+func (t *testTensor) AvgPool2D(ctx ml.Context, k, s int, p float32) ml.Tensor {
+	panic("not implemented")
+}
+
 func (t *testTensor) Conv2D(ctx ml.Context, weight ml.Tensor, s0, s1, p0, p1, d0, d1 int) ml.Tensor {
 	panic("not implemented")
 }
 
-func (t *testTensor) RoPE(ctx ml.Context, positionIDs, ropeFactors ml.Tensor, dim uint32, base, scale float32) ml.Tensor {
+func (t *testTensor) RoPE(ctx ml.Context, positionIDs, ropeFactors ml.Tensor, dim, ropeType uint32, base, scale float32) ml.Tensor {
 	panic("not implemented")
 }
 
@@ -483,6 +500,10 @@ func (t *testTensor) Permute(ctx ml.Context, shape ...int) ml.Tensor {
 }
 
 func (t *testTensor) Contiguous(ctx ml.Context) ml.Tensor {
+	panic("not implemented")
+}
+
+func (t *testTensor) Set(ctx ml.Context, t2 ml.Tensor, offset int, strides ...int) ml.Tensor {
 	panic("not implemented")
 }
 

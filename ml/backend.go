@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -18,12 +19,14 @@ type Config interface {
 
 	Strings(string, ...[]string) []string
 	Uints(string, ...[]uint32) []uint32
+	Floats(string, ...[]float32) []float32
 }
 
 type Backend interface {
 	Config() Config
 	Get(name string) Tensor
 	NewContext() Context
+	NewContextSize(size int) Context
 }
 
 // BackendCacheConfig should be implemented by backends that need special output
@@ -99,8 +102,17 @@ type Context interface {
 
 	Forward(...Tensor) Context
 	Compute(...Tensor)
-	MaxTensors() int
+	MaxGraphNodes() int
 	Close()
+
+	// Input returns a context appropriate for creating input tensors
+	Input() Context
+
+	// Output returns a context appropriate for creating output tensors
+	Output() Context
+
+	// Layer returns a context appropriate for creating intermediate tensors
+	Layer(int) Context
 }
 
 type Tensor interface {
@@ -123,8 +135,10 @@ type Tensor interface {
 	RMSNorm(ctx Context, weight Tensor, eps float32) Tensor
 	Scale(ctx Context, s float64) Tensor
 
+	AvgPool2D(ctx Context, k, s int, p float32) Tensor
 	Conv2D(ctx Context, weight Tensor, s0, s1, p0, p1, d0, d1 int) Tensor
-	RoPE(ctx Context, positionIDs, ropeFactors Tensor, dim uint32, base, scale float32) Tensor
+
+	RoPE(ctx Context, positionIDs, ropeFactors Tensor, dim, ropeType uint32, base, scale float32) Tensor
 
 	Tanh(ctx Context) Tensor
 	GELU(ctx Context) Tensor
@@ -134,6 +148,7 @@ type Tensor interface {
 	View(ctx Context, offset int, shape ...int) Tensor
 	Permute(ctx Context, shape ...int) Tensor
 	Contiguous(ctx Context) Tensor
+	Set(ctx Context, t2 Tensor, offset int, strides ...int) Tensor
 
 	Pad(ctx Context, shape ...int) Tensor
 	Unpad(ctx Context, shape ...int) Tensor
@@ -205,7 +220,7 @@ func Dump(ctx Context, t Tensor, opts ...DumpOptions) string {
 		return dump[[]float32](ctx, t, opts[0].Items, func(f float32) string {
 			return strconv.FormatFloat(float64(f), 'f', opts[0].Precision, 32)
 		})
-	case DTypeF16:
+	case DTypeF16, DTypeQ80, DTypeQ40:
 		f32 := ctx.Empty(DTypeF32, t.Shape()...)
 		f32 = t.Copy(ctx, f32)
 		return dump[[]float32](ctx, f32, opts[0].Items, func(f float32) string {
@@ -231,16 +246,17 @@ func dump[S ~[]E, E number](ctx Context, t Tensor, items int, fn func(E) string)
 	}
 
 	shape := t.Shape()
+	slices.Reverse(shape)
 
 	var sb strings.Builder
 	var f func([]int, int)
 	f = func(dims []int, stride int) {
 		prefix := strings.Repeat(" ", len(shape)-len(dims)+1)
-		fmt.Fprint(&sb, "[")
-		defer func() { fmt.Fprint(&sb, "]") }()
+		sb.WriteString("[")
+		defer func() { sb.WriteString("]") }()
 		for i := 0; i < dims[0]; i++ {
 			if i >= items && i < dims[0]-items {
-				fmt.Fprint(&sb, "..., ")
+				sb.WriteString("..., ")
 				// skip to next printable element
 				skip := dims[0] - 2*items
 				if len(dims) > 1 {
@@ -255,9 +271,14 @@ func dump[S ~[]E, E number](ctx Context, t Tensor, items int, fn func(E) string)
 					fmt.Fprint(&sb, ",", strings.Repeat("\n", len(dims)-1), prefix)
 				}
 			} else {
-				fmt.Fprint(&sb, fn(s[stride+i]))
+				text := fn(s[stride+i])
+				if len(text) > 0 && text[0] != '-' {
+					sb.WriteString(" ")
+				}
+
+				sb.WriteString(text)
 				if i < dims[0]-1 {
-					fmt.Fprint(&sb, ", ")
+					sb.WriteString(", ")
 				}
 			}
 		}
@@ -273,5 +294,7 @@ const (
 	DTypeOther DType = iota
 	DTypeF32
 	DTypeF16
+	DTypeQ80
+	DTypeQ40
 	DTypeI32
 )
