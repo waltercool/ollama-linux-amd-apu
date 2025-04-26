@@ -4,6 +4,7 @@ package registry
 
 import (
 	"cmp"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -71,8 +73,13 @@ type statusCodeRecorder struct {
 func (r *statusCodeRecorder) WriteHeader(status int) {
 	if r._status == 0 {
 		r._status = status
+		r.ResponseWriter.WriteHeader(status)
 	}
-	r.ResponseWriter.WriteHeader(status)
+}
+
+func (r *statusCodeRecorder) Write(b []byte) (int, error) {
+	r._status = r.status()
+	return r.ResponseWriter.Write(b)
 }
 
 var (
@@ -242,6 +249,7 @@ func (s *Local) handleDelete(_ http.ResponseWriter, r *http.Request) error {
 }
 
 type progressUpdateJSON struct {
+	Error     string      `json:"error,omitempty,omitzero"`
 	Status    string      `json:"status,omitempty,omitzero"`
 	Digest    blob.Digest `json:"digest,omitempty,omitzero"`
 	Total     int64       `json:"total,omitempty,omitzero"`
@@ -330,9 +338,8 @@ func (s *Local) handlePull(w http.ResponseWriter, r *http.Request) error {
 				return err
 			}
 			err := s.Client.Pull(ctx, p.model())
-			var oe *ollama.Error
-			if errors.As(err, &oe) && oe.Temporary() {
-				continue // retry
+			if canRetry(err) {
+				continue
 			}
 			return err
 		}
@@ -347,14 +354,15 @@ func (s *Local) handlePull(w http.ResponseWriter, r *http.Request) error {
 		case err := <-done:
 			flushProgress()
 			if err != nil {
-				var status string
 				if errors.Is(err, ollama.ErrModelNotFound) {
-					status = fmt.Sprintf("error: model %q not found", p.model())
+					return &serverError{
+						Status:  404,
+						Code:    "not_found",
+						Message: fmt.Sprintf("model %q not found", p.model()),
+					}
 				} else {
-					status = fmt.Sprintf("error: %v", err)
+					return err
 				}
-				enc.Encode(progressUpdateJSON{Status: status})
-				return nil
 			}
 
 			// Emulate old client pull progress (for now):
@@ -389,4 +397,21 @@ func decodeUserJSON[T any](r io.Reader) (T, error) {
 		err = &serverError{Status: 400, Message: "empty request body", Code: "bad_request"}
 	}
 	return zero, err
+}
+
+func canRetry(err error) bool {
+	if err == nil {
+		return false
+	}
+	var oe *ollama.Error
+	if errors.As(err, &oe) {
+		return oe.Temporary()
+	}
+	s := err.Error()
+	return cmp.Or(
+		errors.Is(err, context.DeadlineExceeded),
+		strings.Contains(s, "unreachable"),
+		strings.Contains(s, "no route to host"),
+		strings.Contains(s, "connection reset by peer"),
+	)
 }
