@@ -715,9 +715,7 @@ func (m *multiLPath) String() string {
 	return strings.Join(*m, ", ")
 }
 
-// TODO(jessegross): This is causing tensor allocation failures with large batches when not offloaded
-// to the GPU
-/*func (s *Server) reserveWorstCaseGraph() error {
+func (s *Server) reserveWorstCaseGraph() error {
 	ctx := s.model.Backend().NewContext()
 	defer ctx.Close()
 
@@ -760,7 +758,7 @@ func (m *multiLPath) String() string {
 	}
 
 	return nil
-}*/
+}
 
 func (s *Server) loadModel(
 	ctx context.Context,
@@ -797,10 +795,10 @@ func (s *Server) loadModel(
 	s.seqs = make([]*Sequence, s.parallel)
 	s.seqsSem = semaphore.NewWeighted(int64(s.parallel))
 
-	/*err = s.reserveWorstCaseGraph()
+	err = s.reserveWorstCaseGraph()
 	if err != nil {
 		panic(err)
-	}*/
+	}
 
 	s.status = llm.ServerStatusReady
 	s.ready.Done()
@@ -820,7 +818,6 @@ func Execute(args []string) error {
 	threads := fs.Int("threads", runtime.NumCPU(), "Number of threads to use during generation")
 	verbose := fs.Bool("verbose", false, "verbose output (default: disabled)")
 	_ = fs.Bool("no-mmap", false, "do not memory-map model (slower load but may reduce pageouts if not using mlock)")
-	_ = fs.Bool("mlock", false, "force system to keep model in RAM rather than swapping or compressing")
 	tensorSplit := fs.String("tensor-split", "", "fraction of the model to offload to each GPU, comma-separated list of proportions")
 	multiUserCache := fs.Bool("multiuser-cache", false, "optimize input cache algorithm for multiple users")
 
