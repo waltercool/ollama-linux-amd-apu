@@ -2,6 +2,7 @@
 #include "llava.h"
 
 #include "llama.h"
+#include "ggml-cpp.h"
 
 #include <algorithm>
 #include <cerrno>
@@ -209,7 +210,11 @@ static bool clip_llava_handle_patches(clip_ctx * ctx_clip, std::vector<float *> 
     struct ggml_tensor *flatten = ggml_view_2d(model.ctx, permuted_cont, clip_n_mmproj_embd(ctx_clip), num_patches_height * num_patches_width * num_patches_per_side * num_patches_per_side,  size_ele * clip_n_mmproj_embd(ctx_clip), 0);
     // ggml_tensor_printf(flatten,"flatten",__LINE__,false,false);
     ggml_build_forward_expand(gf, flatten);
-    ggml_graph_compute_with_ctx(model.ctx, gf, 1);
+
+    ggml_backend_ptr backend { ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr) };
+    GGML_ASSERT(backend != nullptr && "failed to initialize CPU backend");
+    ggml_backend_graph_compute(backend.get(), gf);
+
     struct ggml_tensor* result = ggml_graph_node(gf, -1);
 
     memcpy(image_embd_out, image_embd_v[0], clip_embd_nbytes(ctx_clip)); // main image as global context
@@ -457,7 +462,7 @@ struct llava_embd_batch {
     std::vector<llama_seq_id *> seq_ids;
     std::vector<int8_t>         logits;
     llama_batch batch;
-    llava_embd_batch(float * embd, int32_t n_embd, int32_t n_tokens, llama_pos pos_0, llama_seq_id seq_id) {
+    llava_embd_batch(float * embd, int32_t n_tokens, llama_pos pos_0, llama_seq_id seq_id) {
         pos     .resize(n_tokens);
         n_seq_id.resize(n_tokens);
         seq_ids .resize(n_tokens + 1);
@@ -469,7 +474,6 @@ struct llava_embd_batch {
             /*n_tokens       =*/ n_tokens,
             /*tokens         =*/ nullptr,
             /*embd           =*/ embd,
-            /*n_embd         =*/ n_embd,
             /*pos            =*/ pos.data(),
             /*n_seq_id       =*/ n_seq_id.data(),
             /*seq_id         =*/ seq_ids.data(),
@@ -493,7 +497,7 @@ bool llava_eval_image_embed(llama_context * ctx_llama, const struct llava_image_
             n_eval = n_batch;
         }
         float * embd = image_embed->embed+i*n_embd;
-        llava_embd_batch llava_batch = llava_embd_batch(embd, n_embd, n_eval, *n_past, 0);
+        llava_embd_batch llava_batch = llava_embd_batch(embd, n_eval, *n_past, 0);
         if (llama_decode(ctx_llama, llava_batch.batch)) {
             LOG_ERR("%s : failed to eval\n", __func__);
             return false;
