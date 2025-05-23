@@ -50,8 +50,9 @@ var (
 
 	// APUvalidForGTT contains the list of GPU architectures that support GTT memory allocation
 	APUvalidForGTT = []string{
-		"gfx1103", // Radeon 890m, 780m, 760m, 740m (RDNA3)
-		"gfx1151", // RDNA3+
+		"gfx1103", // Radeon 780m, 760m, 740m (RDNA3)
+		"gfx1150", // RDNA 3.5 Strix Point
+		"gfx1151", // RDNA 3.5 Strix Point Halo
 		"gfx1152", // RDNA3+
 		"gfx1037", // Radeon 610M (RDNA2)
 		"gfx1035", // Radeon 680m, 660m (RDNA2)
