@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"log/slog"
 	"math"
 	"slices"
 	"strconv"
@@ -123,6 +124,10 @@ type DeviceMemory struct {
 	// may not be persistent across instances of the runner.
 	Name string
 
+	// UUID is a unique persistent identifier for the device for matching
+	// with system management libraries
+	UUID string
+
 	// Weights is the per-layer memory needed for the model weights.
 	Weights []Memory
 
@@ -131,6 +136,31 @@ type DeviceMemory struct {
 
 	// Graph is the size of the compute graph. It is not per-layer.
 	Graph Memory
+}
+
+func memoryPresent(mem []Memory) bool {
+	return slices.ContainsFunc(mem, func(m Memory) bool { return m.Size != 0 })
+}
+
+func (m DeviceMemory) LogValue() slog.Value {
+	var attrs []slog.Attr
+	if memoryPresent(m.Weights) {
+		attrs = append(attrs, slog.Any("Weights", m.Weights))
+	}
+
+	if memoryPresent(m.Cache) {
+		attrs = append(attrs, slog.Any("Cache", m.Cache))
+	}
+
+	if m.Graph.Size != 0 {
+		attrs = append(attrs, slog.Any("Graph", m.Graph))
+	}
+
+	if len(attrs) > 0 && m.UUID != "" {
+		attrs = append([]slog.Attr{slog.String("UUID", m.UUID)}, attrs...)
+	}
+
+	return slog.GroupValue(attrs...)
 }
 
 // BackendMemory provides the amount of memory required to load the model
@@ -148,6 +178,20 @@ type BackendMemory struct {
 
 	// GPU model components are located on one or more GPUs.
 	GPUs []DeviceMemory
+}
+
+func (m BackendMemory) LogValue() slog.Value {
+	var attrs []slog.Attr
+	if m.InputWeights.Size != 0 {
+		attrs = append(attrs, slog.Any("InputWeights", m.InputWeights))
+	}
+
+	attrs = append(attrs, slog.Any(m.CPU.Name, m.CPU))
+	for _, g := range m.GPUs {
+		attrs = append(attrs, slog.Any(g.Name, g))
+	}
+
+	return slog.GroupValue(attrs...)
 }
 
 var backends = make(map[string]func(string, BackendParams) (Backend, error))
