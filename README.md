@@ -5,7 +5,7 @@ Intended for use in container environments such as Podman and Docker, but can be
 Older APUs like the AMD Ryzen 5000 and 7000 series, needs ROCM 6.3.4. Newer APUs like the AMD Ryzen 8000 series, needs ROCM 6.4.1.
 
 ## TLDR
-Run ghcr.io/rjmalagon/ollama-linux-amd-apu-rocm:rocm-6.4.1:latest container image for AMD Ryzen 8000 series APU, or ghcr.io/rjmalagon/ollama-linux-amd-apu-rocm:rocm-6.3.4:latest container image for AMD Ryzen 5000 and 7000 series APU.
+Run ghcr.io/rjmalagon/ollama-linux-amd-apu-rocm:rocm-6.4.1-latest container image for AMD Ryzen 8000 series APU, or ghcr.io/rjmalagon/ollama-linux-amd-apu-rocm:rocm-6.3.4-latest container image for AMD Ryzen 5000 and 7000 series APU.
 
 ## Disclaimer:
 This is my duct-taped patch work, someone that barely reads GO, this works for me but maybe will no work for you.
@@ -35,7 +35,7 @@ The override will need adjustments for other AMD APUs.
 
 ## Container image
 You can test my container image on ghcr.io/rjmalagon/ollama-linux-amd-apu:latest .
-For recents AMD APUs, like Ryzen 8000 series APUs and newer AI series, there is a special image with ROCM 6.4.1 builtin on ghcr.io/rjmalagon/ollama-linux-amd-apu-rocm:rocm-6.4.1:latest, not recommended for older APUs (=<7000 series).
+For recents AMD APUs, like Ryzen 8000 series APUs and newer AI series, there is a special image with ROCM 6.4.1 builtin on ghcr.io/rjmalagon/ollama-linux-amd-apu-rocm:rocm-6.4.1-latest, not recommended for older APUs (=<7000 series).
 Example on how to run this image on Podman with an Ryzen 7000 Series APU, with flash attention and quantized KV cache, listen on localhost.
 ```shell
 podman run --name ollama  -v /local/data/path/:/root/.ollama:Z -e OLLAMA_FLASH_ATTENTION=true -e HSA_OVERRIDE_GFX_VERSION="10.3.0" -e OLLAMA_KV_CACHE_TYPE="q8_0" --device /dev/kfd --device /dev/dri -e OLLAMA_DEBUG=0 -p 127.0.0.1:11434:11434 ghcr.io/rjmalagon/ollama-linux-amd-apu:latest serve
