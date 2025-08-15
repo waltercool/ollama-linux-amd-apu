@@ -78,8 +78,12 @@ func GTTmemoryOnAPU(gfx string) (bool, error) {
 
 	fullKernelVersion := strings.TrimSpace(string(output))
 
-	// Split by "-" and take the first part, or use the whole string if no "-" is present
+	// Split by "+" then "-" and take the first part, or use the whole string if no "+" or "-" is present
 	versionPart := fullKernelVersion
+
+	if parts := strings.SplitN(fullKernelVersion, "+", 2); len(parts) > 1 {
+		versionPart = parts[0]
+	}
 	if parts := strings.SplitN(fullKernelVersion, "-", 2); len(parts) > 1 {
 		versionPart = parts[0]
 	}
