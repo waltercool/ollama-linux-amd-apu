@@ -27,8 +27,8 @@ type GpuInfo struct { // TODO better name maybe "InferenceProcessor"?
 	// Any extra PATH/LD_LIBRARY_PATH dependencies required for the Library to operate properly
 	DependencyPath []string `json:"lib_path,omitempty"`
 
-	// Extra environment variables specific to the GPU as list of [key,value]
-	EnvWorkarounds [][2]string `json:"envs,omitempty"`
+	// Extra environment variables specific to the GPU as list of [key=value]
+	EnvWorkarounds []string `json:"envs,omitempty"`
 
 	// Set to true if we can NOT reliably discover FreeMemory.  A value of true indicates
 	// the FreeMemory is best effort, and may over or under report actual memory usage
@@ -37,6 +37,7 @@ type GpuInfo struct { // TODO better name maybe "InferenceProcessor"?
 
 	// GPU information
 	ID        string `json:"gpu_id"`  // string to use for selection of this specific GPU
+        filterID  int    //nolint:unused,nolintlint // AMD Workaround: The numeric ID of the device used to filter out other devices
 	Name      string `json:"name"`    // user friendly name if available
 	Compute   string `json:"compute"` // Compute Capability or gfx
 	ApuUseGTT bool   //AMD APU using GTT memory used to set -no-mmap to avoid trashing RAM, GTT use RAM
