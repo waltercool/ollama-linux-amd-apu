@@ -130,7 +130,7 @@ FROM ${FLAVOR} AS archive
 COPY --from=cpu dist/lib/ollama /lib/ollama
 COPY --from=build /bin/ollama /bin/ollama
 
-FROM ubuntu:24.10
+FROM ubuntu:25.04
 RUN apt-get update \
     && apt-get install -y ca-certificates \
     && apt-get clean \
