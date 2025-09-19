@@ -52,8 +52,8 @@ func (sa *Attention) Forward(ctx ml.Context, hiddenStates, positions ml.Tensor, 
 	query = sa.QueryNorm.Forward(ctx, query, opts.eps)
 	key = sa.KeyNorm.Forward(ctx, key, opts.eps)
 
-	query = fast.RoPE(ctx, query, positions, opts.headDim(), opts.ropeBase, opts.ropeScale, rope.WithTypeNeoX())
-	key = fast.RoPE(ctx, key, positions, opts.headDim(), opts.ropeBase, opts.ropeScale, rope.WithTypeNeoX())
+	query = fast.RoPE(ctx, query, positions, opts.headDim(), opts.ropeBase, 1./opts.ropeScale, rope.WithTypeNeoX())
+	key = fast.RoPE(ctx, key, positions, opts.headDim(), opts.ropeBase, 1./opts.ropeScale, rope.WithTypeNeoX())
 
 	attention := nn.Attention(ctx, query, key, value, 1./math.Sqrt(float64(opts.headDim())), cache)
 	attention = attention.Reshape(ctx, attention.Dim(0)*attention.Dim(1), batchSize)
@@ -151,14 +151,25 @@ type Model struct {
 	*Options
 }
 
-// Forward implements model.Model.
 func (m *Model) Forward(ctx ml.Context, batch input.Batch) (ml.Tensor, error) {
+	hiddenStates, err := m.forward(ctx, batch)
+	if err != nil {
+		return nil, err
+	}
+
+	return m.Output.Forward(ctx, hiddenStates), nil
+}
+
+// Forward implements model.Model.
+func (m *Model) forward(ctx ml.Context, batch input.Batch) (ml.Tensor, error) {
 	positions := ctx.Input().FromIntSlice(batch.Positions, len(batch.Positions))
 
 	hiddenStates := m.TokenEmbedding.Forward(ctx, batch.Inputs)
 
 	for i, layer := range m.Layers {
-		m.Cache.SetLayer(i)
+		if m.Cache != nil {
+			m.Cache.SetLayer(i)
+		}
 
 		var outputs ml.Tensor
 		if i == len(m.Layers)-1 {
@@ -168,12 +179,11 @@ func (m *Model) Forward(ctx ml.Context, batch input.Batch) (ml.Tensor, error) {
 		hiddenStates = layer.Forward(ctx, hiddenStates, positions, outputs, m.Cache, m.Options)
 	}
 
-	hiddenStates = m.OutputNorm.Forward(ctx, hiddenStates, m.eps)
-	return m.Output.Forward(ctx, hiddenStates), nil
+	return m.OutputNorm.Forward(ctx, hiddenStates, m.eps), nil
 }
 
 func (m *Model) Shift(ctx ml.Context, layer int, key, shift ml.Tensor) (ml.Tensor, error) {
-	return fast.RoPE(ctx, key, shift, m.headDim(), m.ropeBase, m.ropeScale, rope.WithTypeNeoX()), nil
+	return fast.RoPE(ctx, key, shift, m.headDim(), m.ropeBase, 1./m.ropeScale, rope.WithTypeNeoX()), nil
 }
 
 var _ model.Model = (*Model)(nil)
@@ -213,7 +223,7 @@ func New(c fs.Config) (model.Model, error) {
 			valueLength:    int(c.Uint("attention.value_length")),
 			eps:            c.Float("attention.layer_norm_rms_epsilon"),
 			ropeBase:       c.Float("rope.freq_base"),
-			ropeScale:      c.Float("rope.freq_scale", 1),
+			ropeScale:      c.Float("rope.scaling.factor", 1),
 			numExperts:     int(c.Uint("expert_count")),
 			numExpertsUsed: int(c.Uint("expert_used_count")),
 			normTopKProb:   c.Bool("norm_top_k_prob", true),
@@ -227,4 +237,5 @@ func New(c fs.Config) (model.Model, error) {
 func init() {
 	model.Register("qwen3", New)
 	model.Register("qwen3moe", New)
+	model.Register("qwen3_embed", newEmbed)
 }
