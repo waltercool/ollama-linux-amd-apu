@@ -67,11 +67,11 @@ var (
 		"gfx909",  // Radeon Vega
 		"gfx90c",  // Radeon Vega Ryxen 5000 Series
         "gfx902",  // Radeon Vega Ryzen 2000 Series
-        "gfx801",  // Volcanic Islands (Probably unsupported by curren ROCM)
-        "gfx810",  // Volcanic Islands (Probably unsupported by curren ROCM)
+        "gfx801",  // Volcanic Islands (Probably unsupported by current ROCM)
+        "gfx810",  // Volcanic Islands (Probably unsupported by current ROCM)
         "gfx700",  // Sea Islands (Probably unsupported by curren ROCM)
-        "gfx703",  // Sea Islands (Probably unsupported by curren ROCM)
-        "gfx705",  // Sea Islands (Probably unsupported by curren ROCM)
+        "gfx703",  // Sea Islands (Probably unsupported by current ROCM)
+        "gfx705",  // Sea Islands (Probably unsupported by current ROCM)
 	}
 
 	// ApuUseGTT indicates whether GTT memory allocation is enabled for the current APU
