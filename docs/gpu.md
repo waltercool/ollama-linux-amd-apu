@@ -97,6 +97,22 @@ This table shows some example GPUs that map to these LLVM targets:
 | gfx1101 | Radeon PRO W7700 |
 | gfx1102 | Radeon RX 7600 |
 
+For APU GPUs, you can use the following LLVM targets:
+| **LLVM Target** | **APU GPU** | Supported ROCM Version |
+|-----------------|---------------------|------------------------|
+| gfx900 | AMD Ryzen 2000 Series with Radeon Vega Graphics | ROCM-6.3.4 |
+| gfx900 | AMD Ryzen 3000 Series with Radeon Vega Graphics | ROCM-6.3.4 |
+| gfx900 | AMD Ryzen 4000 Series with Radeon Graphics | ROCM-6.3.4 |
+| gfx900 | AMD Ryzen 5000 Series with Radeon Graphics | ROCM-6.3.4 |
+| gfx1010 | AMD Ryzen 5000 Series with RDNA1 Graphics | ROCM-6.3.4 |
+| gfx1030 | AMD Ryzen 6000 Series with RDNA2 Graphics | ROCM-6.3.4 |
+| gfx1030 | AMD Ryzen 7000 Series with RDNA2 Graphics | ROCM-6.3.4 |
+| gfx1100 | RDNA3 based APUs | ROCM-6.4.3 |
+| gfx1150 | RDNA3.5 based APUs | ROCM-6.4.3 |
+| gfx1200 | RDNA4 based APUs | ROCM-6.4.3 |
+
+Others APUs are already supported, just needs to identify the appropriate LLVM target.
+
 AMD is working on enhancing ROCm v6 to broaden support for families of GPUs in a
 future release which should increase support for more GPUs.
 
@@ -114,7 +130,7 @@ and force CPU usage, use an invalid GPU ID (e.g., "-1").  When available, use th
 ### Container Permission
 
 In some Linux distributions, SELinux can prevent containers from
-accessing the AMD GPU devices.  On the host system you can run 
+accessing the AMD GPU devices.  On the host system you can run
 `sudo setsebool container_use_devices=1` to allow containers to use devices.
 
 ### Metal (Apple GPUs)

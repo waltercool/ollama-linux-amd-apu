@@ -48,23 +48,30 @@ var (
 	ROCmLibGlobs          = []string{"libhipblas.so.2*", "rocblas"} // TODO - probably include more coverage of files here...
 	RocmStandardLocations = []string{"/opt/rocm/lib", "/usr/lib64"}
 
-	// APUvalidForGTT contains the list of GPU architectures that support GTT memory allocation
+	// APUvalidForGTT contains the list of GPU architectures that support GTT memory allocation, taken from https://llvm.org/docs/AMDGPUUsage.html
 	APUvalidForGTT = []string{
-		"gfx1100", // Radeon 780m, 760m, 740m (RDNA3)
-               	"gfx1101", // Radeon 780m, 760m, 740m (RDNA3)
-               	"gfx1104", // Radeon 780m, 760m, 740m (RDNA3)
-                "gfx1102", // Radeon 780m, 760m, 740m (RDNA3)
+		"gfx1250", // RDNA4
+		"gfx1251", // RDNA4
 		"gfx1103", // Radeon 780m, 760m, 740m (RDNA3)
 		"gfx1150", // RDNA 3.5 Strix Point
 		"gfx1151", // RDNA 3.5 Strix Point Halo
-		"gfx1152", // RDNA3+
+		"gfx1152", // RDNA3.5
+		"gfx1153", // RDNA3.5
+		"gfx1103", // Radeon 780m, 760m, 740m (RDNA3)
 		"gfx1037", // Radeon 610M (RDNA2)
 		"gfx1035", // Radeon 680m, 660m (RDNA2)
 		"gfx1033", // Van Gogh (RDNA2)
 		"gfx1036", // Generic RDNA2
+		"gfx1013", // Generic RDNA1
 		"gfx940",  // MI300A (CDNA3)
-		"gfx90c",  // Radeon Vega 7 (Ryzen 5600G)
-                "gfx902",  // Radeon Vega (Ryzen 2200G)
+		"gfx909",  // Radeon Vega
+		"gfx90c",  // Radeon Vega Ryxen 5000 Series
+        "gfx902",  // Radeon Vega Ryzen 2000 Series
+        "gfx801",  // Volcanic Islands (Probably unsupported by curren ROCM)
+        "gfx810",  // Volcanic Islands (Probably unsupported by curren ROCM)
+        "gfx700",  // Sea Islands (Probably unsupported by curren ROCM)
+        "gfx703",  // Sea Islands (Probably unsupported by curren ROCM)
+        "gfx705",  // Sea Islands (Probably unsupported by curren ROCM)
 	}
 
 	// ApuUseGTT indicates whether GTT memory allocation is enabled for the current APU

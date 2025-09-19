@@ -11,6 +11,20 @@ Run ghcr.io/rjmalagon/ollama-linux-amd-apu:rocm-6.4.3-latest container image for
 This is my duct-taped patch work, someone that barely reads GO, this works for me but maybe will no work for you.
 You can read more about the original author of the patches on https://github.com/Maciej-Mogilany/ollama/tree/AMD_APU_GTT_memory
 
+## Almost/maybe supported APUs
+| **LLVM Target** | **APU GPU** | Supported ROCM Version |
+|-----------------|---------------------|------------------------|
+| gfx900 | AMD Ryzen 2000 Series with Radeon Vega Graphics | ROCM-6.3.4 |
+| gfx900 | AMD Ryzen 3000 Series with Radeon Vega Graphics | ROCM-6.3.4 |
+| gfx900 | AMD Ryzen 4000 Series with Radeon Graphics | ROCM-6.3.4 |
+| gfx900 | AMD Ryzen 5000 Series with Radeon Graphics | ROCM-6.3.4 |
+| gfx1010 | AMD Ryzen 5000 Series with RDNA1 Graphics | ROCM-6.3.4 |
+| gfx1030 | AMD Ryzen 6000 Series with RDNA2 Graphics | ROCM-6.3.4 |
+| gfx1030 | AMD Ryzen 7000 Series with RDNA2 Graphics | ROCM-6.3.4 |
+| gfx1100 | RDNA3 based APUs | ROCM-6.4.3 |
+| gfx1150 | RDNA3.5 based APUs | ROCM-6.4.3 |
+| gfx1200 | RDNA4 based APUs | ROCM-6.4.3 |
+
 ## How to build on Docker:
 Just like:
 ```shell
@@ -471,7 +485,7 @@ See the [API documentation](./docs/api.md) for all endpoints.
 - [AppFlowy](https://github.com/AppFlowy-IO/AppFlowy) (AI collaborative workspace with Ollama, cross-platform and self-hostable)
 - [Lumina](https://github.com/cushydigit/lumina.git) (A lightweight, minimal React.js frontend for interacting with Ollama servers)
 - [Tiny Notepad](https://pypi.org/project/tiny-notepad) (A lightweight, notepad-like interface to chat with ollama available on PyPI)
-- [macLlama (macOS native)](https://github.com/hellotunamayo/macLlama) (A native macOS GUI application for interacting with Ollama models, featuring a chat interface.) 
+- [macLlama (macOS native)](https://github.com/hellotunamayo/macLlama) (A native macOS GUI application for interacting with Ollama models, featuring a chat interface.)
 - [GPTranslate](https://github.com/philberndt/GPTranslate) (A fast and lightweight, AI powered desktop translation application written with Rust and Tauri. Features real-time translation with OpenAI/Azure/Ollama.)
 - [ollama launcher](https://github.com/NGC13009/ollama-launcher) (A launcher for Ollama, aiming to provide users with convenient functions such as ollama server launching, management, or configuration.)
 - [ai-hub](https://github.com/Aj-Seven/ai-hub) (AI Hub supports multiple models via API keys and Chat support via Ollama API.)
