@@ -1,11 +1,10 @@
 # Notes:
 This branch is a "not really a fork", includes patches to  enable local main memory, asignable GTT , to the APU GPU on AMD CPUs.
-Tested on AMD Ryzen 5000 and 7000 series APU. Needs >=6.10 Linux kernel.
+Tested on AMD Ryzen 2000, 5000 and 7000 series APU. Needs >=6.10 Linux kernel.
 Intended for use in container environments such as Podman and Docker, but can be used to custom builds.
-Older APUs like the AMD Ryzen 5000 and 7000 series, needs ROCM 6.3.4. Newer APUs like the AMD Ryzen 8000 series, needs ROCM 6.4.2.
 
 ## TLDR
-Run ghcr.io/rjmalagon/ollama-linux-amd-apu:rocm-6.4.3-latest container image for AMD Ryzen 8000 series APU, or ghcr.io/rjmalagon/ollama-linux-amd-apu:rocm-6.3.4-latest container image for AMD Ryzen 5000 and 7000 series APU.
+Run ghcr.io/rjmalagon/ollama-linux-amd-apu:rocm-6.4.4-latest container image for AMD APUs.
 
 ## Disclaimer:
 This is my duct-taped patch work, someone that barely reads GO, this works for me but maybe will no work for you.
@@ -14,16 +13,16 @@ You can read more about the original author of the patches on https://github.com
 ## Almost/maybe supported APUs
 | **LLVM Target** | **APU GPU** | Supported ROCM Version |
 |-----------------|---------------------|------------------------|
-| gfx900 | AMD Ryzen 2000 Series with Radeon Vega Graphics | ROCM-6.3.4 |
-| gfx900 | AMD Ryzen 3000 Series with Radeon Vega Graphics | ROCM-6.3.4 |
-| gfx900 | AMD Ryzen 4000 Series with Radeon Graphics | ROCM-6.3.4 |
-| gfx900 | AMD Ryzen 5000 Series with Radeon Graphics | ROCM-6.3.4 |
-| gfx1010 | AMD Ryzen 5000 Series with RDNA1 Graphics | ROCM-6.3.4 |
-| gfx1030 | AMD Ryzen 6000 Series with RDNA2 Graphics | ROCM-6.3.4 |
-| gfx1030 | AMD Ryzen 7000 Series with RDNA2 Graphics | ROCM-6.3.4 |
-| gfx1100 | RDNA3 based APUs | ROCM-6.4.3 |
-| gfx1150 | RDNA3.5 based APUs | ROCM-6.4.3 |
-| gfx1200 | RDNA4 based APUs | ROCM-6.4.3 |
+| gfx900 | AMD Ryzen 2000 Series with Radeon Vega Graphics | ROCM-6.4.4 |
+| gfx900 | AMD Ryzen 3000 Series with Radeon Vega Graphics | ROCM-6.4.4 |
+| gfx900 | AMD Ryzen 4000 Series with Radeon Graphics | ROCM-6.4.4 |
+| gfx900 | AMD Ryzen 5000 Series with Radeon Graphics | ROCM-6.4.4 |
+| gfx1010 | AMD Ryzen 5000 Series with RDNA1 Graphics | ROCM-6.4.4 |
+| gfx1030 | AMD Ryzen 6000 Series with RDNA2 Graphics | ROCM-6.4.4 |
+| gfx1030 | AMD Ryzen 7000 Series with RDNA2 Graphics | ROCM-6.4.4 |
+| gfx1100 | RDNA3 based APUs | ROCM-6.4.4 |
+| gfx1150 | RDNA3.5 based APUs | ROCM-6.4.4 |
+| gfx1200 | RDNA4 based APUs | ROCM-6.4.4 |
 
 ## How to build on Docker:
 Just like:
@@ -31,7 +30,6 @@ Just like:
 docker build --build-arg FLAVOR=rocm .
 ```
 Requires buildkit enabled docker.
-Change ROCM version to match your APU on the dockerfile, ROCM 6.3.4 for older APUs. ROCM 6.4.2 or ROCM 6.4.3 for newer APUs.
 
 ## How to build on Podman:
 Buildah on podman just doesn't cut it, you can use "daemon-less" buildkit for this:
@@ -49,7 +47,6 @@ The override will need adjustments for other AMD APUs.
 
 ## Container image
 You can test my container image on ghcr.io/rjmalagon/ollama-linux-amd-apu:latest .
-For recents AMD APUs, like Ryzen 8000 series APUs and newer AI series, there is a special image with ROCM 6.4.3 builtin on ghcr.io/rjmalagon/ollama-linux-amd-apu:rocm-6.4.3-latest, not recommended for older APUs (=<7000 series).
 Example on how to run this image on Podman with an Ryzen 7000 Series APU, with flash attention and quantized KV cache, listen on localhost.
 ```shell
 podman run --name ollama  -v /local/data/path/:/root/.ollama:Z -e OLLAMA_FLASH_ATTENTION=true -e HSA_OVERRIDE_GFX_VERSION="10.3.0" -e OLLAMA_KV_CACHE_TYPE="q8_0" --device /dev/kfd --device /dev/dri -e OLLAMA_DEBUG=0 -p 127.0.0.1:11434:11434 ghcr.io/rjmalagon/ollama-linux-amd-apu:latest serve

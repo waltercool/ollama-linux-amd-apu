@@ -100,16 +100,16 @@ This table shows some example GPUs that map to these LLVM targets:
 For APU GPUs, you can use the following LLVM targets:
 | **LLVM Target** | **APU GPU** | Supported ROCM Version |
 |-----------------|---------------------|------------------------|
-| gfx900 | AMD Ryzen 2000 Series with Radeon Vega Graphics | ROCM-6.3.4 |
-| gfx900 | AMD Ryzen 3000 Series with Radeon Vega Graphics | ROCM-6.3.4 |
-| gfx900 | AMD Ryzen 4000 Series with Radeon Graphics | ROCM-6.3.4 |
-| gfx900 | AMD Ryzen 5000 Series with Radeon Graphics | ROCM-6.3.4 |
-| gfx1010 | AMD Ryzen 5000 Series with RDNA1 Graphics | ROCM-6.3.4 |
-| gfx1030 | AMD Ryzen 6000 Series with RDNA2 Graphics | ROCM-6.3.4 |
-| gfx1030 | AMD Ryzen 7000 Series with RDNA2 Graphics | ROCM-6.3.4 |
-| gfx1100 | RDNA3 based APUs | ROCM-6.4.3 |
-| gfx1150 | RDNA3.5 based APUs | ROCM-6.4.3 |
-| gfx1200 | RDNA4 based APUs | ROCM-6.4.3 |
+| gfx900 | AMD Ryzen 2000 Series with Radeon Vega Graphics | ROCM-6.4.4 |
+| gfx900 | AMD Ryzen 3000 Series with Radeon Vega Graphics | ROCM-6.4.4 |
+| gfx900 | AMD Ryzen 4000 Series with Radeon Graphics | ROCM-6.4.4 |
+| gfx900 | AMD Ryzen 5000 Series with Radeon Graphics | ROCM-6.4.4 |
+| gfx1010 | AMD Ryzen 5000 Series with RDNA1 Graphics | ROCM-6.4.4 |
+| gfx1030 | AMD Ryzen 6000 Series with RDNA2 Graphics | ROCM-6.4.4 |
+| gfx1030 | AMD Ryzen 7000 Series with RDNA2 Graphics | ROCM-6.4.4 |
+| gfx1100 | RDNA3 based APUs | ROCM-6.4.4 |
+| gfx1150 | RDNA3.5 based APUs | ROCM-6.4.4 |
+| gfx1200 | RDNA4 based APUs | ROCM-6.4.4 |
 
 Others APUs are already supported, just needs to identify the appropriate LLVM target.
 
